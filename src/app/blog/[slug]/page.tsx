@@ -6,7 +6,7 @@ import { getBlogPostBySlug, getBlogPosts } from '@/lib/db'
 import ReactMarkdown from 'react-markdown'
 import { Clock, User, Tag, ArrowLeft } from 'lucide-react'
 
-type Props = { params: { slug: string } }
+type Props = { params: Promise<{ slug: string }> }
 
 export async function generateStaticParams(): Promise<Array<{ slug: string }>> {
   const posts = await getBlogPosts()
@@ -14,7 +14,8 @@ export async function generateStaticParams(): Promise<Array<{ slug: string }>> {
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const post = await getBlogPostBySlug(params.slug)
+  const { slug } = await params
+  const post = await getBlogPostBySlug(slug)
   if (!post) return { title: 'Post nie znaleziony' }
   return {
     title: post.title,
@@ -23,8 +24,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function BlogPostPage({ params }: Props) {
+  const { slug } = await params
   const [post, allPosts] = await Promise.all([
-    getBlogPostBySlug(params.slug),
+    getBlogPostBySlug(slug),
     getBlogPosts(),
   ])
 
