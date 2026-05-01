@@ -1,0 +1,57 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model BlogPost {
+  id          Int      @id @default(autoincrement())
+  slug        String   @unique
+  title       String
+  excerpt     String
+  content     String
+  category    String
+  author      String
+  authorRole  String
+  imageUrl    String
+  publishedAt DateTime @default(now())
+  readTime    Int
+  featured    Boolean  @default(false)
+}
+
+model Product {
+  id          Int     @id @default(autoincrement())
+  name        String
+  slug        String  @unique
+  description String
+  price       Float
+  category    String
+  imageUrl    String
+  features    String
+  inStock     Boolean @default(true)
+  badge       String?
+}
+
+model ContactMessage {
+  id        Int      @id @default(autoincrement())
+  name      String
+  email     String
+  phone     String?
+  company   String?
+  subject   String
+  message   String
+  createdAt DateTime @default(now())
+}
+
+model Testimonial {
+  id         Int    @id @default(autoincrement())
+  name       String
+  role       String
+  company    String
+  content    String
+  rating     Int
+  imageUrl   String
+  industry   String
+}
