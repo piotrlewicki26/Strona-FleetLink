@@ -1,36 +1,169 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# FleetLink — Inteligentne zarządzanie flotą GPS
 
-## Getting Started
+Nowoczesna strona internetowa dla FleetLink — systemu GPS i telematyki dla flot pojazdów ciężarowych, dostawczych i osobowych.
 
-First, run the development server:
+## Stos technologiczny
+
+- **Next.js 14** (App Router, TypeScript)
+- **Tailwind CSS** — stylowanie
+- **Prisma + SQLite** — baza danych
+- **Framer Motion** — animacje
+- **Lucide React** — ikony
+
+## Strony
+
+| Ścieżka | Opis |
+|---|---|
+| `/` | Strona główna (Hero, LiveTrustBar, HowItWorks, Dashboard, AI, Opinie) |
+| `/o-nas` | O nas — historia, misja, wartości |
+| `/branze` | Branże — Transport, Logistyka, Budownictwo… |
+| `/rozwiazania` | Rozwiązania GPS — monitoring, paliwo, raporty |
+| `/cennik` | Cennik z kalkulatorem oszczędności |
+| `/sklep` | Sklep z produktami GPS |
+| `/urzadzenia` | Urządzenia GPS — specyfikacje |
+| `/blog` | Blog z artykułami |
+| `/blog/[slug]` | Pełny artykuł |
+| `/kontakt` | Formularz kontaktowy z ochroną antyspamową |
+
+## Wymagania
+
+- Node.js 18 lub nowszy
+- npm 9+ (lub yarn/pnpm)
+
+## Instalacja lokalna
 
 ```bash
+# 1. Sklonuj repozytorium
+git clone https://github.com/piotrlewicki26/Strona-FleetLink.git
+cd Strona-FleetLink
+
+# 2. Zainstaluj zależności
+npm install
+
+# 3. Skonfiguruj zmienne środowiskowe
+cp .env.example .env
+# (domyślna konfiguracja używa lokalnego pliku SQLite — nie wymaga zmian)
+
+# 4. Utwórz bazę danych i załaduj dane przykładowe
+npx prisma migrate dev --name init
+npx prisma db seed
+
+# 5. Uruchom serwer developerski
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Otwórz [http://localhost:3000](http://localhost:3000) w przeglądarce.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Budowanie produkcyjne
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm run build
+npm start
+```
 
-## Learn More
+## Wdrożenie na Vercel (zalecane)
 
-To learn more about Next.js, take a look at the following resources:
+1. Utwórz konto na [vercel.com](https://vercel.com) i połącz z GitHubem.
+2. Zaimportuj repozytorium — Vercel automatycznie wykryje Next.js.
+3. W ustawieniach projektu dodaj zmienną środowiskową:
+   - `DATABASE_URL` = `file:./dev.db` (SQLite) **lub** connection string do PostgreSQL
+4. W sekcji **Build & Development Settings** dodaj polecenie post-install:
+   ```
+   npx prisma migrate deploy && npx prisma db seed
+   ```
+5. Kliknij **Deploy**.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+> **Uwaga:** Dla środowiska produkcyjnego zalecana jest migracja do PostgreSQL (np. [Supabase](https://supabase.com), [Neon](https://neon.tech)). Zmień `provider = "sqlite"` na `provider = "postgresql"` w `prisma/schema.prisma` i zaktualizuj `DATABASE_URL`.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Wdrożenie na VPS / własny hosting
 
-## Deploy on Vercel
+### Wymagania serwera
+- Ubuntu 22.04 LTS (lub podobny)
+- Node.js 18+, npm
+- PM2 (process manager)
+- Nginx (reverse proxy)
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### Kroki
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+# Na serwerze:
+sudo apt update && sudo apt install -y nodejs npm nginx
+sudo npm install -g pm2
+
+# Sklonuj i zbuduj
+git clone https://github.com/piotrlewicki26/Strona-FleetLink.git /var/www/fleetlink
+cd /var/www/fleetlink
+npm install
+cp .env.example .env
+# Edytuj .env — ustaw właściwe DATABASE_URL
+npx prisma migrate deploy
+npx prisma db seed
+npm run build
+
+# Uruchom z PM2
+pm2 start npm --name "fleetlink" -- start
+pm2 save
+pm2 startup
+```
+
+### Konfiguracja Nginx
+
+```nginx
+server {
+    listen 80;
+    server_name fleetlink.pl www.fleetlink.pl;
+
+    location / {
+        proxy_pass http://localhost:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_cache_bypass $http_upgrade;
+    }
+}
+```
+
+Włącz HTTPS (Let's Encrypt):
+```bash
+sudo apt install certbot python3-certbot-nginx
+sudo certbot --nginx -d fleetlink.pl -d www.fleetlink.pl
+```
+
+## Zmienne środowiskowe
+
+| Zmienna | Opis | Przykład |
+|---|---|---|
+| `DATABASE_URL` | Connection string do bazy danych | `file:./dev.db` |
+
+## Struktura projektu
+
+```
+src/
+├── app/                  # Next.js App Router
+│   ├── actions/          # Server Actions (formularz kontaktowy)
+│   ├── api/              # API routes (blog, produkty)
+│   ├── blog/             # Strony bloga
+│   ├── cennik/           # Cennik
+│   ├── kontakt/          # Kontakt
+│   ├── o-nas/            # O nas
+│   ├── branze/           # Branże
+│   ├── rozwiazania/      # Rozwiązania
+│   ├── sklep/            # Sklep
+│   ├── urzadzenia/       # Urządzenia
+│   └── page.tsx          # Strona główna
+├── components/
+│   ├── home/             # Sekcje strony głównej
+│   └── layout/           # Header i Footer
+└── lib/
+    ├── db.ts             # Zapytania do bazy danych
+    └── prisma.ts         # Klient Prisma
+prisma/
+├── schema.prisma         # Schemat bazy danych
+└── seed.ts               # Dane przykładowe
+```
+
+## Licencja
+
+© 2025 FleetLink. Wszelkie prawa zastrzeżone.
+
