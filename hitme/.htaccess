@@ -1,0 +1,19 @@
+Options -Indexes
+AddDefaultCharset UTF-8
+
+RewriteEngine On
+
+# Serve pre-built Next.js static pages
+# Next.js export with trailingSlash=true creates directory/index.html files,
+# which Apache handles automatically.
+
+# Rewrite /api/blog and /api/products to PHP equivalents
+RewriteRule ^api/blog/?$     /api/blog.php     [L,QSA]
+RewriteRule ^api/products/?$ /api/products.php [L,QSA]
+
+# If a requested path has no extension and no matching file/dir,
+# try adding /index.html (fallback for client-side navigation)
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{DOCUMENT_ROOT}%{REQUEST_URI}/index.html -f
+RewriteRule ^(.*)$ /$1/index.html [L]

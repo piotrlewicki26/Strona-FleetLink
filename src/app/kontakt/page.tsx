@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { submitContact } from '@/app/actions/contact'
 import { Mail, Phone, MapPin, Clock, CheckCircle, AlertCircle } from 'lucide-react'
 
 export default function ContactPage() {
@@ -18,9 +17,20 @@ export default function ContactPage() {
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     setIsPending(true)
-    const formData = new FormData(e.currentTarget)
-    const result = await submitContact({}, formData)
-    setState(result)
+    try {
+      const formData = new FormData(e.currentTarget)
+      const data: Record<string, string> = {}
+      formData.forEach((value, key) => { data[key] = value as string })
+      const res = await fetch('/api/contact.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      })
+      const result = await res.json() as { success?: boolean; error?: string }
+      setState(result)
+    } catch {
+      setState({ error: 'Wystąpił błąd podczas wysyłania. Spróbuj ponownie.' })
+    }
     setIsPending(false)
   }
 
